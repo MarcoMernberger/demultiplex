@@ -12,6 +12,7 @@ import sys
 
 from pkg_resources import require, VersionConflict
 from setuptools import setup
+from Cython.Build import cythonize
 
 try:
     require('setuptools>=38.3')
@@ -21,4 +22,4 @@ except VersionConflict:
 
 
 if __name__ == "__main__":
-    setup(use_pyscaffold=True)
+    setup(ext_modules=cythonize("src/demultiplex/*.pyx"))
