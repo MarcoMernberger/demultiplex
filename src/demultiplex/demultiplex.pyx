@@ -524,7 +524,7 @@ class Demultiplexer:
         pairing = "paired" if self.pairing else "single"
         dependencies = add_dependencies + [self.do_demultiplex(add_dependencies)]
         library_name = self.input_sample.name
-        for key in self.decision_callbacks:
+        for key in list(self.decision_callbacks.keys()) + ["discarded"]:
             sample_name = f"{library_name}_{key}"
             folder = self.result_dir / sample_name
             job = self.clean_up(library_name, sample_name, dependencies)
