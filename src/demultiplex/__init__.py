@@ -11,5 +11,5 @@ finally:
     del get_distribution, DistributionNotFound
 
 from . import demultiplex
-from .demultiplex import * 
+from .demultiplex import *
 from .util import *

@@ -1,3 +1,4 @@
+#embed_pos_in_docstring
 """
 Created on August 02, 2019
 
@@ -539,3 +540,5 @@ class Demultiplexer:
             res[sample_name] = sample
         self.samples = res
 
+cdef int axpy(int a, int x, int y):
+    return a * x + y
