@@ -437,12 +437,17 @@ class Demultiplexer:
         for i, read in enumerate(readX):
             fhs[i].write(('@%s\n%s\n+\n%s\n' % read))
 
+    def __decode(self, read):
+        return (read[0].decode(), read[1].decode(), read[2].decode())
+
     def _decide_on_barcode(self, readX):
-        if len(readX) == 2:
+        if self.pairing:
             readA, readB = readX
             #check if reads belong together
             if not readA[2].split()[0] == readB[2].split()[0]:
                 raise ValueError('Read pairs not matching: %s %s' % (readA[2], readB[2]))
+        else:
+            readX = self.__decode(readX)
         for key in self.decision_callbacks:
             qf = self.decision_callbacks[key]
             accept, trims, reads = qf(readX)
@@ -450,9 +455,13 @@ class Demultiplexer:
                 trimmed_reads = []
                 for i, read in enumerate(reads):
                     trim = trims[i]
-                    trimmed = (read[2].decode(), read[0][trim[0]:trim[1]].decode(), read[1][trim[0]:trim[1]].decode())
+                    trimmed = self.__decode((read[2], read[0][trim[0]:trim[1]], read[1][trim[0]:trim[1]]))
                     trimmed_reads.append(trimmed)
                 return key, tuple(trimmed_reads)
+        if self.pairing:
+            readX = self.__decode((readX[0][2], readX[0][0], readX[0][1])), self.__decode((readX[1][2], readX[1][0], readX[1][1]))
+        else:
+            readX = self.__decode(readX[2], readX[0], readX[1])
         return 'discarded', readX
 
     def do_demultiplex(self, dependencies = []):
