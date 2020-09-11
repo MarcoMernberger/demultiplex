@@ -247,7 +247,9 @@ def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, 
         read2_i2 = cutadapt_locate(seq2, adapter_sequence_begin_reverse, max_error_rate, False)
         if read2_i2 == -1:
             return False, None, None
-        return True, ((read1_i1,  read1_i2), (read1_i1,  read1_i2))
+        if (read1_i1>=read1_i2) or (read2_i1>=read2_i2):
+            return False, None, None
+        return True, ((read1_i1,  read1_i2), (read2_i1,  read2_i2))
 
     #forward reverse and paired
     def __filter_func_paired_both_relevant(tup):
@@ -282,7 +284,7 @@ def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, 
         read2_i2 = cutadapt_locate(seq2, adapter_sequence_begin_reverse, max_error_rate, False)
         if read2_i2 < 1:
             read2_i2 = len(seq2)
-        if (read1_i1==read1_i2) or (read1_i1==read1_i2):
+        if (read1_i1>=read1_i2) or (read2_i1>=read2_i2):
             return False, None, None
         return True, ((read1_i1,  read1_i2), (read1_i1,  read1_i2)), ((seq1, qual1, name1), (seq2, qual2, name2))
 
@@ -320,7 +322,7 @@ def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, 
         read2_i2 = cutadapt_locate(seq2, adapter_sequence_begin_reverse, max_error_rate, False)
         if read2_i2 < 1:
             read2_i2 = len(seq2)
-        if (read1_i1==read1_i2) or (read1_i1==read1_i2):
+        if (read1_i1>=read1_i2) or (read2_i1>=read2_i2):
             return False, None, None
         return True, ((read1_i1,  read1_i2), (read1_i1,  read1_i2)), ((seq1, qual1, name1), (seq2, qual2, name2))
 
@@ -332,6 +334,8 @@ def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, 
             return False, None, None
         read1_i2 = cutadapt_locate(seq1, adapter_sequence_end, max_error_rate, False)
         if read1_i2 == -1:
+            return False, None, None
+        if (read1_i1>=read1_i2):
             return False, None, None
         return True, ((read1_i1,  read1_i2)), ((seq1, qual1, name1))
 
