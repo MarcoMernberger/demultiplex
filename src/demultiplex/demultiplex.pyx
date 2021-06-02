@@ -77,9 +77,12 @@ def cutadapt_locate(char* seq, char* adapter, float max_error_rate, bool start):
     cdef int rstart
     cdef int rstop
     #can we find the exact sequence?
-    pos = seq.find(adapter)
+    pos = seq.find(adapter)        
     if pos >= 0:
-        return pos
+        if start:
+            return pos + len(adapter)  # we want to trim the adapter
+        else:
+            return pos  # if its the end adapter, we need to trim at the beginning
     #if not, use cutadapt to find the best match
     elif max_error_rate == 0:
         return -1
@@ -89,9 +92,9 @@ def cutadapt_locate(char* seq, char* adapter, float max_error_rate, bool start):
         if match is None:
             return -1 
         if start:
-            return match.rstop
+            return match.rstop  # we want to trim the adapter
         else:
-            return match.rstart
+            return match.rstart  # if its the end adapter, we need to trim at the beginning
 
 def hamming(char* seq1, char* seq2):
     cdef int l
@@ -263,13 +266,12 @@ def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, 
         elif read1_i1 == -1 and read2_i1 != -1:
             #adapter in read 2, switch
             seq1, qual1, seq2, qual2 = seq2, qual2, seq1, qual1
-            read1_i1 = read2_i1
+            read1_i1, read2_i1 = read2_i1, read1_i1
         elif read1_i1 != -1 and read2_i1 != -1:
             if read2_i1 < read1_i1:
                 #adapter in read 2, something freakish with read12
                 seq1, qual1, seq2, qual2 = seq2, qual2, seq1, qual1
-                read1_i1 = read2_i1
-            read2_i1 = -1
+                read1_i1, read2_i1 = read2_i1, read1_i1
             #raise ValueError("adapter_Sequence_begin found in both reads, this should not happen.")
         else:
             pass
