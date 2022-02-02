@@ -187,7 +187,6 @@ def _demultiplex_hamming(barcode_df, int max_errors):
         ret[key] = qf
     return ret
 
-
 def read_fastq_iterator_retrieve_index(file_object):
     """retrieve the index-read from name, append to the read and keep track of the indices in seq and quality
     Yield (seq, name, quality)
@@ -380,9 +379,10 @@ def with_primers(adapter_sequence_begin, adapter_sequence_end):
         return wrapper
     return filter
 
+
 class Demultiplexer:
 
-    def __init__(self, sample, barcode_df_or_file, outputdir = None, max_error_rate = 0):
+    def __init__(self, sample, barcode_df_or_file, outputdir = None, max_error_rate = 0, filter_func = None):
         self.name = f"DM_{sample.name}"
         if outputdir is None:
             self.result_dir = Path('cache') / self.name
@@ -404,7 +404,7 @@ class Demultiplexer:
         self.input_files = [self.input_sample.get_aligner_input_filenames()]
         self.pairing = len(self.input_files[0]) == 2
         self.decision_callbacks = self.initialize_decision_callbacks()
-
+        self.filter_func = filter_func
 
     def initialize_decision_callbacks(self):
         callbacks = {}
@@ -416,10 +416,10 @@ class Demultiplexer:
             codes.add(code)
         if len(codes) < len(self.barcodes):
             forward_only = True
-        for row in self.barcodes.iterrows():
-            key = row[1]['key']
-            fwd = row[1]['forward'].encode()
-            rev = row[1]['reverse'].encode()
+        for _, row in self.barcodes.iterrows():
+            key = row['key']
+            fwd = row['forward'].encode()
+            rev = row['reverse'].encode()
             callbacks[key] = get_decision_callback(fwd, rev, self.pairing, forward_only, self.maximal_error_rate)
 
         return callbacks
@@ -540,6 +540,9 @@ class Demultiplexer:
         pairing = "paired" if self.pairing else "single"
         dependencies = add_dependencies + [self.do_demultiplex(add_dependencies)]
         library_name = self.input_sample.name
+        fastq_processor = mbf_align.fastq2.Straight()
+        if self.filter_func is not None:
+            fastq_processor = mbf_align.fastq2.Paired_Filtered_Trimmed(self.filter_func)
         for key in list(self.decision_callbacks.keys()) + ["discarded"]:
             sample_name = f"{library_name}_{key}"
             folder = self.result_dir / sample_name
@@ -548,7 +551,7 @@ class Demultiplexer:
                 sample_name,
                 input_strategy = mbf_align.FASTQsFromJob(job),
                 reverse_reads = False,
-                fastq_processor = mbf_align.fastq2.Straight(),
+                fastq_processor = fastq_processor,
                 pairing = pairing,
                 vid = None
                 )
