@@ -12,6 +12,7 @@ import numpy as np
 from mplots import MPPlotJob
 from .demultiplex import Demultiplexer
 
+
 AdapterMatch = collections.namedtuple(
     "AdapterMatch", ["astart", "astop", "rstart", "rstop", "matches", "errors"]
 )

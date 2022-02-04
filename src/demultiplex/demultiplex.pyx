@@ -17,13 +17,6 @@ import pandas as pd
 import collections
 import shutil
 import functools
-
-cdef:
-    struct Read:
-        char* seq
-        char* name
-        char* qual
-
 import cutadapt.align
 from collections import namedtuple
 
@@ -34,13 +27,23 @@ try:
 except (ImportError, NameError, AttributeError):
     maketrans = bytes.maketrans
 
+
+cdef:
+    struct Read:
+        char* seq
+        char* name
+        char* qual
+
+
 rev_comp_table = maketrans(
     b"ACBDGHKMNSRUTWVYacbdghkmnsrutwvy", b"TGVHCDMKNSYAAWBRTGVHCDMKNSYAAWBR"
 )
 
+
 AdapterMatch = collections.namedtuple(
         "AdapterMatch", ["astart", "astop", "rstart", "rstop", "matches", "errors"]
 ) 
+
 
 def locate(adapter_sequence, maximal_error_rate = 1, start = True):
     if start:
@@ -71,6 +74,7 @@ def locate(adapter_sequence, maximal_error_rate = 1, start = True):
         return _match
     return match
 
+
 def cutadapt_locate(char* seq, char* adapter, float max_error_rate, bool start):
     """use cutadapt to find an adapter (or barcode) in read, returns the start position (0 based) or -1"""
     cdef int pos
@@ -95,6 +99,7 @@ def cutadapt_locate(char* seq, char* adapter, float max_error_rate, bool start):
             return match.rstop  # we want to trim the adapter
         else:
             return match.rstart  # if its the end adapter, we need to trim at the beginning
+
 
 def hamming(char* seq1, char* seq2):
     cdef int l
@@ -127,6 +132,7 @@ def hamming_ignore_N(seq1, seq2, int max_errors):
                 return dist
     return dist
 
+
 def with_primers(adapter_sequence_begin, adapter_sequence_end):
     adapter_sequence_begin_reverse = adapter_sequence_begin[::-1].translate(rev_comp_table)
     adapter_sequence_end_reverse = adapter_sequence_end[::-1].translate(rev_comp_table)
@@ -137,6 +143,7 @@ def with_primers(adapter_sequence_begin, adapter_sequence_end):
             return value
         return wrapper
     return filter
+
 
 def _demultiplex_hamming(barcode_df, int max_errors):
     """creates a list of quality filters for the PE lane"""
@@ -187,6 +194,7 @@ def _demultiplex_hamming(barcode_df, int max_errors):
         ret[key] = qf
     return ret
 
+
 def read_fastq_iterator_retrieve_index(file_object):
     """retrieve the index-read from name, append to the read and keep track of the indices in seq and quality
     Yield (seq, name, quality)
@@ -206,6 +214,7 @@ def read_fastq_iterator_retrieve_index(file_object):
         row3 = file_object.readline()
         row4 = file_object.readline()
 
+
 def get_fastq_reads(filename, total_index_length = False):
     """get fastq reads - either straight as seq,name, quality or with the index read stiched back onto the seq,
     if @total_index_length is set"""
@@ -215,6 +224,7 @@ def get_fastq_reads(filename, total_index_length = False):
 #    else:
 #        return chipseq._common.read_fastq_iterator(f)
     return None
+
 
 def get_decision_callback(adapter_sequence_begin, adapter_sequence_end, paired, forward_only, max_error_rate):
     adapter_sequence_begin_reverse = adapter_sequence_begin[::-1].translate(rev_comp_table)
